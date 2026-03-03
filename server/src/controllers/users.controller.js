@@ -56,3 +56,11 @@ export const getAllCategories = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+export const getMe = (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  res.json(req.user);
+}

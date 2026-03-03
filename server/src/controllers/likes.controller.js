@@ -1,8 +1,6 @@
 
 export const likePost = async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+
   const postId = parseInt(req.params.postId);
   try {
     const result = await db.query(
@@ -20,9 +18,7 @@ export const likePost = async (req, res) => {
 }
 
 export const unlikePost = async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+ 
   const postId = parseInt(req.params.postId);
   try {
     const result = await db.query(

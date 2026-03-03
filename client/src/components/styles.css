@@ -1,0 +1,41 @@
+.editor-wrapper {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: white;
+}
+
+.toolbar,
+.control-group {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.active {
+  background: #6366f1;
+  color: white;
+}
+
+.editor-content {
+  margin-top: 20px;
+  min-height: 300px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 250px;
+}

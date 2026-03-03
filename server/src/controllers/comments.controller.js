@@ -1,7 +1,5 @@
 export const createComment = async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+
   const postId = parseInt(req.params.postId);
   const content = req.body.content;
 
@@ -18,9 +16,7 @@ export const createComment = async (req, res) => {
 }
 
 export const updateComment = async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+
   const postId = parseInt(req.params.postId);
   const commentId = parseInt(req.params.id);
   const content = req.body.content;
@@ -38,9 +34,7 @@ export const updateComment = async (req, res) => {
 }
 
 export const deleteComment  = async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+
   const postId = parseInt(req.params.postId);
   const commentId = parseInt(req.params.id);
 
