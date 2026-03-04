@@ -27,7 +27,7 @@ export const getAllPosts = async (req, res) => {
       LEFT JOIN tags t ON pt.tag_id = t.id
       LEFT JOIN post_categories pc ON p.id = pc.post_id
       LEFT JOIN categories c ON pc.category_id = c.id
-      WHERE p.status = 'published'
+      WHERE p.status = 'published' 
       GROUP BY p.id, u.id
       ORDER BY p.created_at DESC
       LIMIT $1 OFFSET $2
@@ -180,79 +180,110 @@ export const createPost = async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  const {
-    title,
-    content,
-    cover_image,
-    status,
-    tags = [],
-    categories = [],
-  } = req.body;
 
-  if (!title || !content || !status) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
+  const { title, content, status, tags, categories } = req.body;
 
-  if (!["draft", "published"].includes(status)) {
-    return res.status(400).json({ message: "Invalid status value" });
+  const cover_image = req.file ? req.file.filename : null;
+
+  if (!title || !content) {
+    return res.status(400).json({ message: "Title and content are required" });
   }
 
   try {
     await db.query("BEGIN");
+
     const postResult = await db.query(
-      "INSERT INTO posts (title, content, cover_image, status, author_id) VALUES($1, $2, $3, $4, $5) RETURNING *;",
-      [title, content, cover_image, status, req.user.id],
+      `INSERT INTO posts (title, content, cover_image, status, author_id)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [
+        title,
+        content,
+        cover_image,
+        status || "draft",
+        req.user.id
+      ]
     );
-    const post = postResult.rows[0];
 
-    for (const rawTag of tags) {
-      const tagName = rawTag.trim().toLowerCase();
-      if (!tagName) continue;
+    const postId = postResult.rows[0].id;
 
-      let tagResult = await db.query("SELECT * FROM tags WHERE name = $1;", [
-        tagName,
-      ]);
-      if (tagResult.rows.length === 0) {
-        tagResult = await db.query(
-          "INSERT INTO tags (name) VALUES ($1) RETURNING *;",
-          [tagName],
+    /* ---------------- TAGS ---------------- */
+
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : JSON.parse(tags);
+
+      const cleanTags = tagArray
+        .map((tag) => tag.trim().toLowerCase())
+        .filter((tag) => tag !== "");
+
+      for (const tagName of cleanTags) {
+        let tagResult = await db.query(
+          "SELECT id FROM tags WHERE name = $1",
+          [tagName]
+        );
+
+        if (tagResult.rows.length === 0) {
+          tagResult = await db.query(
+            "INSERT INTO tags (name) VALUES ($1) RETURNING id",
+            [tagName]
+          );
+        }
+
+        await db.query(
+          `INSERT INTO post_tags (post_id, tag_id)
+           VALUES ($1,$2)
+           ON CONFLICT DO NOTHING`,
+          [postId, tagResult.rows[0].id]
         );
       }
-      await db.query(
-        "INSERT INTO post_tags (post_id, tag_id) VALUES ($1, $2) ;",
-        [post.id, tagResult.rows[0].id],
-      );
     }
 
-    for (const rawCategory of categories) {
-      const categoryName = rawCategory.trim().toLowerCase();
-      if (!categoryName) continue;
+    /* ---------------- CATEGORIES ---------------- */
 
-      let categoryResult = await db.query(
-        "SELECT * FROM  categories WHERE name = $1;",
-        [categoryName],
-      );
-      if (categoryResult.rows.length === 0) {
-        categoryResult = await db.query(
-          "INSERT INTO categories (name) VALUES ($1) RETURNING *;",
-          [categoryName],
+    if (categories) {
+      const categoryArray = Array.isArray(categories)
+        ? categories
+        : JSON.parse(categories);
+
+      const cleanCategories = categoryArray
+        .map((cat) => cat.trim().toLowerCase())
+        .filter((cat) => cat !== "");
+
+      for (const catName of cleanCategories) {
+        let catResult = await db.query(
+          "SELECT id FROM categories WHERE name = $1",
+          [catName]
+        );
+
+        if (catResult.rows.length === 0) {
+          catResult = await db.query(
+            "INSERT INTO categories (name) VALUES ($1) RETURNING id",
+            [catName]
+          );
+        }
+
+        await db.query(
+          `INSERT INTO post_categories (post_id, category_id)
+           VALUES ($1,$2)
+           ON CONFLICT DO NOTHING`,
+          [postId, catResult.rows[0].id]
         );
       }
-
-      await db.query(
-        "INSERT INTO post_categories (post_id, category_id) VALUES ($1, $2) RETURNING *;",
-        [post.id, categoryResult.rows[0].id],
-      );
     }
+
     await db.query("COMMIT");
+
     res.status(201).json({
       message: "Post created successfully",
-      post,
+      postId
     });
   } catch (err) {
     await db.query("ROLLBACK");
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+
+    res.status(500).json({
+      message: "Server error while creating post"
+    });
   }
 };
 

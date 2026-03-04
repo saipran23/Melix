@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
-import Tiptap from "../components/RichEditor";
+import RichEditor from "../components/RichEditor";
 import "./CreatePost.css";
 
 
@@ -16,6 +16,13 @@ function CreatePost() {
     // categories section
     const [categorieName, setCategoriesName] = useState("");
     const [categories, setCategories] = useState([]);
+    // cover-image Section
+    const [coverImage, setCoverImage] = useState(null);
+    const [preview, setPreview] = useState(null);
+
+    const [content, setContent] = useState("");
+
+    const [status, setStatus] = useState("draft");
 
     // tags secction
     function handleTagKeyDown(event) {
@@ -69,13 +76,66 @@ function CreatePost() {
         setCategories(categories.filter((cat) => cat !== categorieToRemove));
     };
 
+
+    function handleCoverUpload(e) {
+        const file = e.target.files[0];
+
+        if (!file) return;
+
+        setCoverImage(file);
+        setPreview(URL.createObjectURL(file));
+    }
+
+    function removeCover() {
+        setCoverImage(null);
+        setPreview(null);
+    }
+
+    // publish  controls
+
+    async function handleSubmit(postStatus) {
+        try {
+
+            if (!title.trim()) {
+                setErr("Title is required");
+                return;
+            }
+
+            if (!content.trim()) {
+                setErr("Content cannot be empty");
+                return;
+            }
+
+            const formData = new FormData();
+
+            formData.append("title", title);
+            formData.append("content", content);
+            formData.append("status", postStatus);
+
+            formData.append("tags", JSON.stringify(tags));
+            formData.append("categories", JSON.stringify(categories));
+
+            if (coverImage) {
+                formData.append("cover_image", coverImage);
+            }
+
+            const res = await axiosInstance.post("/api/posts", formData);
+
+            console.log(res);
+
+        } catch (error) {
+            console.error(error);
+            setErr("Failed to create post");
+        }
+    }
+
     return (
         <div className="create">
 
             <div className="title">
                 <input type="text" onChange={(event) => { setTitle(event.target.value) }} name="title" placeholder="New post title here..." value={title} />
             </div>
-{/* ---------tags section */}
+            {/* ---------tags section */}
             <div className="tag-section">
                 <input
                     type="text"
@@ -102,7 +162,7 @@ function CreatePost() {
                 </div>
                 {err && <p className="tag-error">{err}</p>}
             </div>
-{/* --------- category section*/}
+            {/* --------- category section*/}
             <div className="category-section">
                 <input
                     type="text"
@@ -131,15 +191,43 @@ function CreatePost() {
             </div>
 
             <div className="cover-image-sction">
-                <Tiptap />
+                {!preview ? (
+                    <label className="cover-upload">
+                        Add a cover image
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleCoverUpload}
+                            hidden
+                        />
+                    </label>
+                ) : (
+                    <div className="cover-preview">
+                        <img src={preview} alt="Cover Preview" />
+
+                        <button
+                            type="button"
+                            onClick={removeCover}
+                            className="remove-cover"
+                        >
+                            Remove Cover
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className=" rich-editor-section">
-
+                <RichEditor value={content} onChange={setContent} />
             </div>
 
             <div className="publish-controls">
+                <button onClick={() => handleSubmit("published")}>
+                    Publish Post
+                </button>
 
+                <button onClick={() => handleSubmit("draft")}>
+                    Save Draft
+                </button>
             </div>
 
 

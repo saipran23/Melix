@@ -1,13 +1,8 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
+
 import StarterKit from "@tiptap/starter-kit";
 import Heading from "@tiptap/extension-heading";
-import {
-  Table,
-  TableRow,
-  TableCell,
-  TableHeader,
-} from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
 import Youtube from "@tiptap/extension-youtube";
 import Underline from "@tiptap/extension-underline";
@@ -15,9 +10,19 @@ import Link from "@tiptap/extension-link";
 import Typography from "@tiptap/extension-typography";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Focus from "@tiptap/extension-focus";
+import TextAlign from "@tiptap/extension-text-align";
+import Placeholder from "@tiptap/extension-placeholder";
+
+import {
+  Table,
+  TableRow,
+  TableHeader,
+  TableCell,
+} from "@tiptap/extension-table";
+
 import "./styles.css";
 
-const RichEditor = () => {
+const RichEditor = ({ value, onChange }) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -25,12 +30,14 @@ const RichEditor = () => {
       }),
 
       Heading.configure({
-        levels: [1, 2, 3, 4, 5, 6],
+        levels: [1, 2, 3],
       }),
 
       Image,
 
-      Table.configure({ resizable: true }),
+      Table.configure({
+        resizable: true,
+      }),
       TableRow,
       TableHeader,
       TableCell,
@@ -53,9 +60,31 @@ const RichEditor = () => {
         className: "has-focus",
         mode: "all",
       }),
+
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+
+      Placeholder.configure({
+        placeholder: "Start writing your story...",
+      }),
     ],
-    content: "<p>Hello World 🌍</p>",
+
+    content: value || "",
+
+    onUpdate({ editor }) {
+      const html = editor.getHTML();
+      onChange(html);
+    },
+
+    immediatelyRender: false,
   });
+
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || "");
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 
@@ -63,11 +92,9 @@ const RichEditor = () => {
 };
 
 const MenuBar = ({ editor }) => {
-  const [height, setHeight] = useState(480);
-  const [width, setWidth] = useState(640);
-
   const addImage = useCallback(() => {
     const url = window.prompt("Enter image URL");
+
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
@@ -75,17 +102,19 @@ const MenuBar = ({ editor }) => {
 
   const addYoutubeVideo = () => {
     const url = window.prompt("Enter YouTube URL");
+
     if (url) {
       editor.commands.setYoutubeVideo({
         src: url,
-        width,
-        height,
+        width: 640,
+        height: 480,
       });
     }
   };
 
   const setLink = () => {
     const url = window.prompt("Enter URL");
+
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
     }
@@ -93,8 +122,10 @@ const MenuBar = ({ editor }) => {
 
   return (
     <div className="editor-wrapper">
-      {/* BASIC TOOLBAR */}
+
+      {/* TOOLBAR */}
       <div className="toolbar">
+
         <button onClick={() => editor.chain().focus().undo().run()}>
           Undo
         </button>
@@ -130,12 +161,23 @@ const MenuBar = ({ editor }) => {
           Bullet List
         </button>
 
-        <button onClick={addImage}>Image</button>
+        <button onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+          Ordered List
+        </button>
+
+        <button onClick={addImage}>
+          Image
+        </button>
+
+        <button onClick={addYoutubeVideo}>
+          YouTube
+        </button>
+
       </div>
 
       {/* HEADINGS */}
       <div className="control-group">
-        {[1, 2, 3, 4, 5, 6].map((level) => (
+        {[1, 2, 3].map((level) => (
           <button
             key={level}
             onClick={() =>
@@ -150,43 +192,55 @@ const MenuBar = ({ editor }) => {
         ))}
       </div>
 
+      {/* TEXT ALIGN */}
+      <div className="control-group">
+        <button onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+          Left
+        </button>
+
+        <button onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+          Center
+        </button>
+
+        <button onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+          Right
+        </button>
+
+        <button onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+          Justify
+        </button>
+      </div>
+
       {/* TABLE */}
       <div className="control-group">
+
         <button
           onClick={() =>
             editor
               .chain()
               .focus()
-              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .insertTable({
+                rows: 3,
+                cols: 3,
+                withHeaderRow: true,
+              })
               .run()
           }
         >
           Insert Table
         </button>
 
-        <button onClick={() => editor.chain().focus().deleteTable().run()}>
+        <button
+          onClick={() => editor.chain().focus().deleteTable().run()}
+        >
           Delete Table
         </button>
+
       </div>
 
-      {/* YOUTUBE */}
-      <div className="control-group">
-        <input
-          type="number"
-          value={width}
-          onChange={(e) => setWidth(parseInt(e.target.value))}
-          placeholder="Width"
-        />
-        <input
-          type="number"
-          value={height}
-          onChange={(e) => setHeight(parseInt(e.target.value))}
-          placeholder="Height"
-        />
-        <button onClick={addYoutubeVideo}>Add YouTube</button>
-      </div>
-
+      {/* EDITOR */}
       <EditorContent editor={editor} className="editor-content" />
+
     </div>
   );
 };
