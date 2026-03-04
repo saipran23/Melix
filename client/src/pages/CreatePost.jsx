@@ -6,6 +6,8 @@ import "./CreatePost.css";
 
 
 function CreatePost() {
+    const navigate = useNavigate();
+
     // tittle section
     const [title, setTitle] = useState("");
     // error display
@@ -122,6 +124,7 @@ function CreatePost() {
             const res = await axiosInstance.post("/api/posts", formData);
 
             console.log(res);
+            navigate(`/post/${res.data.post_id}`);
 
         } catch (error) {
             console.error(error);
@@ -190,7 +193,7 @@ function CreatePost() {
 
             </div>
 
-            <div className="cover-image-sction">
+            <div className="cover-image-section">
                 {!preview ? (
                     <label className="cover-upload">
                         Add a cover image

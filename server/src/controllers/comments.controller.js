@@ -1,3 +1,4 @@
+import db from "../config/db.js";
 export const createComment = async (req, res) => {
 
   const postId = parseInt(req.params.postId);

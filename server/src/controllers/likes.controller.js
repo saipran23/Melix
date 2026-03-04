@@ -1,6 +1,5 @@
-
+import db from "../config/db.js";
 export const likePost = async (req, res) => {
-
   const postId = parseInt(req.params.postId);
   try {
     const result = await db.query(
@@ -15,10 +14,9 @@ export const likePost = async (req, res) => {
     console.log("POST /api/posts/:postId/like: ", err);
     res.status(500).json({ message: "Server error" });
   }
-}
+};
 
 export const unlikePost = async (req, res) => {
- 
   const postId = parseInt(req.params.postId);
   try {
     const result = await db.query(
@@ -33,4 +31,29 @@ export const unlikePost = async (req, res) => {
     console.log("POST /api/posts/:postId/like: ", err);
     res.status(500).json({ message: "Server error" });
   }
-}
+};
+
+export const isLikePost = async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  try {
+    if (!req.user) return res.status(401);
+
+    const result = await db.query(
+      `SELECT * FROM likes WHERE post_id = $1 AND user_id = $2;`,
+      [postId, req.user.id],
+    );
+
+    if (result.rows.length !== 0) {
+      res.status(200).json({
+        liked: true,
+      });
+    } else {
+      res.status(200).json({
+        liked: false,
+      });
+    }
+  } catch (err) {
+    console.log("GET /api/posts/:postId/isIike: ", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
