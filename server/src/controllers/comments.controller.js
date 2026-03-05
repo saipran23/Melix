@@ -62,7 +62,9 @@ export const getComments = async (req, res) => {
       `
       SELECT 
         c.*,
-        u.name AS author_name
+        u.name AS author_name,
+        u.profile_image AS profileImage,
+        u.created_At
       FROM comments c
       LEFT JOIN users u ON c.user_id = u.id
       WHERE c.post_id = $1

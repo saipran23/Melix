@@ -6,18 +6,20 @@ import ToggleButton from '@mui/material/ToggleButton';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from "../context/AuthContext";
+import CommentSection from "../components/comments/CommentSection";
 function PostPage() {
     const { postId } = useParams();
     const navigate = useNavigate();
     const [postData, setPostData] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
+    const [allComments, setAllComments] = useState(null);
     const { isAuthenticated } = useAuth();
 
     async function fetchPostDetaile() {
         try {
             const result = await axiosInstance.get("/api/posts/" + postId);
             setPostData(result.data);
-            // console.log(result.data);
+            // console.log(result.data);+
         } catch (err) {
             console.log("Post fetch error:", err);
             navigate("/dashboard");
@@ -25,7 +27,7 @@ function PostPage() {
     }
 
     async function fetchLikeStatus() {
-        // console.log(isAuthenticated);
+
         try {
             const res = await axiosInstance.get(
                 "/api/likes/" + postId + "/like-status"
@@ -66,8 +68,19 @@ function PostPage() {
 
             setIsLiked(!currentLiked);
         } catch (err) {
-            console.log("Like error:", err);
+            console.log("Like error: ", err);
         }
+    }
+
+    async function fetchComments() {
+
+        try {
+            const result = await axiosInstance();
+
+        } catch (err) {
+            console.log("GET Comments: ", err);
+        }
+
     }
 
 
@@ -79,55 +92,60 @@ function PostPage() {
     if (!postData) return <p>Loading post...</p>;
 
     return (
-        <div className="post-page" >
+        <div>
+            <div className="post-page" >
 
-            <h1>{postData.title}</h1>
+                <h1>{postData.title}</h1>
 
-            {postData.cover_image && (
-                <img
-                    src={`http://localhost:3000/uploads/${postData.cover_image}`}
-                    alt="cover"
-                    style={{ width: "100%", maxHeight: "400px", objectFit: "cover" }}
-                />
-            )}
+                {postData.cover_image && (
+                    <img
+                        src={`http://localhost:3000/uploads/${postData.cover_image}`}
+                        alt="cover"
+                        style={{ width: "100%", maxHeight: "400px", objectFit: "cover" }}
+                    />
+                )}
 
-            <div>
-                <h3>Categories:</h3>
-                {postData.categories &&
-                    postData.categories.map((cat, i) => (
-                        <span key={i} style={{ marginRight: "10px" }}>
-                            {cat}
-                        </span>
-                    ))}
+                <div>
+                    <h3>Categories:</h3>
+                    {postData.categories &&
+                        postData.categories.map((cat, i) => (
+                            <span key={i} style={{ marginRight: "10px" }}>
+                                {cat}
+                            </span>
+                        ))}
+                </div>
+                <div>
+                    <h3>Tags:</h3>
+                    {postData.tags &&
+                        postData.tags.map((tag, i) => (
+                            <span key={i}>
+                                #{tag}
+                            </span>
+                        ))}
+                </div>
+                <div
+                    className="post-body"
+                    dangerouslySetInnerHTML={{ __html: postData && postData.content }}
+                ></div>
+
+                <div>
+                    <ToggleButton value="like" selected={isLiked} onClick={handleLike}>
+                        {isLiked ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
+                    </ToggleButton>
+
+                    <span>
+                        {postData.like_count}
+                    </span>
+
+                </div>
+                <div>
+                    <p>Views: {postData.viewcount}</p>
+                    <p>Author: {postData.author_name}</p>
+                    <p>Updated: {postData.updated_at}</p>
+                </div>
             </div>
             <div>
-                <h3>Tags:</h3>
-                {postData.tags &&
-                    postData.tags.map((tag, i) => (
-                        <span key={i}>
-                            #{tag}
-                        </span>
-                    ))}
-            </div>
-            <div
-                className="post-body"
-                dangerouslySetInnerHTML={{ __html: postData && postData.content }}
-            ></div>
-
-            <div>
-                <ToggleButton value="like" selected={isLiked} onClick={handleLike}>
-                    {isLiked ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />}
-                </ToggleButton>
-
-                <span>
-                    {postData.like_count}
-                </span>
-
-            </div>
-            <div>
-                <p>Views: {postData.viewCount}</p>
-                <p>Author: {postData.author_name}</p>
-                <p>Updated: {postData.updated_at}</p>
+                <CommentSection postID = {postId} />
             </div>
         </div>
     );
