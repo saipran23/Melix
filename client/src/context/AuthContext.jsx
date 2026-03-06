@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   // Login
   const login = async (credentials) => {
     const responce = await axiosInstance.post("/api/auth/login", credentials);
-    console.log(responce);
+    // console.log(responce);
     await fetchUser();
   };
 

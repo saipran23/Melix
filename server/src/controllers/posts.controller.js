@@ -15,6 +15,7 @@ export const getAllPosts = async (req, res) => {
         p.cover_image,
         p.status,
         p.created_at,
+        p.viewcount,
         u.id AS author_id,
         u.name AS author_name,
         COALESCE(json_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL), '[]') AS tags,
