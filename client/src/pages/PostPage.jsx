@@ -7,19 +7,27 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useAuth } from "../context/AuthContext";
 import CommentSection from "../components/comments/CommentSection";
+
 function PostPage() {
     const { postId } = useParams();
     const navigate = useNavigate();
     const [postData, setPostData] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
     const [allComments, setAllComments] = useState(null);
-    const { isAuthenticated } = useAuth();
+    const { user, isAuthenticated } = useAuth();
+
+
+    const isOwner =
+        isAuthenticated &&
+        user &&
+        postData &&
+        user.id === postData.author_id;
 
     async function fetchPostDetaile() {
         try {
             const result = await axiosInstance.get("/api/posts/" + postId);
             setPostData(result.data);
-            // console.log(result.data);+
+            console.log(result.data);
         } catch (err) {
             console.log("Post fetch error:", err);
             navigate("/dashboard");
@@ -72,22 +80,31 @@ function PostPage() {
         }
     }
 
-    async function fetchComments() {
-
+    async function handleDeletePost() {
         try {
-            const result = await axiosInstance();
 
+            const result  = await axiosInstance.delete(`/api/posts/${postId}`);
+
+            navigate("/");
+            
         } catch (err) {
-            console.log("GET Comments: ", err);
+            console.log("delete post -:", err);
+            
         }
-
     }
 
 
     useEffect(() => {
+
         fetchPostDetaile();
-        fetchLikeStatus();
-    }, [postId]);
+        if (isAuthenticated) {
+            fetchLikeStatus();
+        }
+        
+        console.log(isAuthenticated+ "-" + isOwner);
+
+
+    }, [postId, isAuthenticated]);
 
     if (!postData) return <p>Loading post...</p>;
 
@@ -144,8 +161,27 @@ function PostPage() {
                     <p>Updated: {postData.updated_at}</p>
                 </div>
             </div>
+
             <div>
-                <CommentSection postID = {postId} />
+
+                {isOwner && (
+
+                    <div className="post-actions">
+
+                        <button onClick={() => navigate(`/post/${postId}/edit`)}>
+                            Edit
+                        </button>
+
+                        <button onClick={handleDeletePost} >
+                            Delete
+                        </button>
+
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <CommentSection postID={postId} />
             </div>
         </div>
     );

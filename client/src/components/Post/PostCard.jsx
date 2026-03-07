@@ -6,7 +6,7 @@ function PostCard(props) {
 
     return (
         <div>
-            <Link to={`/post/ ${props.id}`}>
+            <Link to={`/post/${props.id}`}>
                 <div className="image-wrapper">
                     <img
                         src={

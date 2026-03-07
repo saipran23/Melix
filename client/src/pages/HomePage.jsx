@@ -35,6 +35,7 @@ function HomePage() {
                     author_name={post.author_name}
                     like_count={post.like_count}
                     tags = {post.tags}
+                    authorId = {post.author_id}
                 />
             })}
         </div>

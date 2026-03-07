@@ -1,24 +1,26 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import RichEditor from "../components/RichEditor";
-import "./CreatePost.css";
+import { useNavigate } from "react-router-dom";
 
 
-function CreatePost() {
+function EditPostPage() {
     const navigate = useNavigate();
 
-    // tittle section
+    const { postId } = useParams();
+    const [postDetails, setPostDetails] = useState(null);
+
     const [title, setTitle] = useState("");
-    // error display
+
     const [err, setErr] = useState("");
-    // tags section
+
     const [tagName, setTagName] = useState("");
     const [tags, setTags] = useState([]);
-    // categories section
+
     const [categorieName, setCategoriesName] = useState("");
     const [categories, setCategories] = useState([]);
-    // cover-image Section
+
     const [coverImage, setCoverImage] = useState(null);
     const [preview, setPreview] = useState(null);
 
@@ -26,7 +28,37 @@ function CreatePost() {
 
     const [status, setStatus] = useState("draft");
 
-    // tags secction
+
+    useEffect(() => {
+        fetchPostDetaile();
+    }, [postId]);
+
+    async function fetchPostDetaile() {
+        try {
+            const result = await axiosInstance.get(`/api/posts/${postId}`);
+            const post = result.data;
+
+            setPostDetails(post);
+            setTitle(post.title);
+            setTags(post.tags || []);
+            setCategories(post.categories || []);
+            setContent(post.content);
+
+            setPreview(
+                post.cover_image
+                    ? `http://localhost:3000/uploads/${post.cover_image}`
+                    : null
+            );
+
+            setStatus(post.status);
+            console.log(result.data);
+        } catch (err) {
+            console.log("Post fetch error:", err);
+            navigate("/dashboard");
+        }
+    }
+
+
     function handleTagKeyDown(event) {
         if (event.key !== "Enter") return;
         event.preventDefault();
@@ -49,8 +81,6 @@ function CreatePost() {
     const removeTag = (tagToRemove) => {
         setTags(tags.filter((tag) => tag !== tagToRemove));
     };
-
-    // categories section 
 
     function handleCategoriesKeyDown(event) {
         if (event.key !== "Enter") return;
@@ -78,7 +108,6 @@ function CreatePost() {
         setCategories(categories.filter((cat) => cat !== categorieToRemove));
     };
 
-
     function handleCoverUpload(e) {
         const file = e.target.files[0];
 
@@ -93,11 +122,8 @@ function CreatePost() {
         setPreview(null);
     }
 
-    // publish  controls
-
-    async function handleSubmit(postStatus) {
+    async function handleSubmit() {
         try {
-
             if (!title.trim()) {
                 setErr("Title is required");
                 return;
@@ -112,7 +138,7 @@ function CreatePost() {
 
             formData.append("title", title);
             formData.append("content", content);
-            formData.append("status", postStatus);
+            formData.append("status", status);
 
             formData.append("tags", JSON.stringify(tags));
             formData.append("categories", JSON.stringify(categories));
@@ -121,24 +147,30 @@ function CreatePost() {
                 formData.append("cover_image", coverImage);
             }
 
-            const res = await axiosInstance.post("/api/posts", formData);
+            if (!preview) {
+                formData.append("remove_cover", true);
+            }
+
+            const res = await axiosInstance.put(`/api/posts/${postId}`, formData);
 
             console.log(res);
-            navigate(`/post/${res.data.post_id.trim()}`);
+
+            navigate(`/post/${postId}`);
 
         } catch (error) {
             console.error(error);
-            setErr("Failed to create post");
+            setErr("Failed to update post");
         }
     }
+    if (!postDetails) return (<p>Loading post Details...</p>);
 
     return (
-        <div className="create">
+        <div>
 
             <div className="title">
                 <input type="text" onChange={(event) => { setTitle(event.target.value) }} name="title" placeholder="New post title here..." value={title} />
             </div>
-            {/* ---------tags section */}
+
             <div className="tag-section">
                 <input
                     type="text"
@@ -165,7 +197,7 @@ function CreatePost() {
                 </div>
                 {err && <p className="tag-error">{err}</p>}
             </div>
-            {/* --------- category section*/}
+
             <div className="category-section">
                 <input
                     type="text"
@@ -218,24 +250,18 @@ function CreatePost() {
                     </div>
                 )}
             </div>
-
             <div className=" rich-editor-section">
                 <RichEditor value={content} onChange={setContent} />
             </div>
 
             <div className="publish-controls">
-                <button onClick={() => handleSubmit("published")}>
-                    Publish Post
-                </button>
-
-                <button onClick={() => handleSubmit("draft")}>
-                    Save Draft
+                <button onClick={() => handleSubmit()}>
+                    Update Post
                 </button>
             </div>
-
 
         </div>
     );
 }
 
-export default CreatePost;
+export default EditPostPage;

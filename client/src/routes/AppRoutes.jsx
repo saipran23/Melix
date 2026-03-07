@@ -5,8 +5,9 @@ import CreatePost from "../pages/CreatePost";
 import PostPage from "../pages/PostPage";
 import ProfilePage from "../pages/ProfilePage";
 import HomePage from "../pages/HomePage";
+import DashboardPage from "../pages/DashboardPage";
+import EditPostPage from "../pages/EditPostPage";
 
-const Dashboard = () => <h1>Dashboard</h1>;
 
 const AppRoutes = () => {
     return (
@@ -21,19 +22,28 @@ const AppRoutes = () => {
                 path="/dashboard"
                 element={
                     <ProtectedRoute>
-                        <Dashboard />
+                        <DashboardPage />
                     </ProtectedRoute>
                 }
             />
             <Route path="/CreatePost" element={
                 <ProtectedRoute>
                     <CreatePost />
-                </ProtectedRoute>} />
+                </ProtectedRoute>} 
+            />
 
             <Route path="/profile" element={
                 <ProtectedRoute>
                     <ProfilePage />
-                </ProtectedRoute>} />
+                </ProtectedRoute>} 
+            />
+
+            <Route path="/post/:postId/edit" element={
+                <ProtectedRoute>
+                    <EditPostPage />
+                </ProtectedRoute>} 
+            />
+
         </Routes>
     );
 };

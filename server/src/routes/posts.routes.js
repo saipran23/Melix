@@ -28,7 +28,7 @@ router.get("/:postId", getPostById);
 
 router.post("/",requireAuth, upload.single("cover_image"),  createPost);
 router.patch("/:postId", requireAuth,  updatePost);
-router.put("/:postId", requireAuth,  replacePost);
+router.put("/:postId",upload.single("cover_image"), requireAuth,  replacePost);
 router.delete("/:postId",requireAuth,  deletePost);
 
 export default router;

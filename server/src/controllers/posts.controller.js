@@ -54,10 +54,9 @@ export const getPostById = async (req, res) => {
   try {
     await db.query("BEGIN");
 
-    await db.query(
-      "UPDATE posts SET viewCount = viewCount + 1 WHERE id = $1",
-      [postId],
-    );
+    await db.query("UPDATE posts SET viewCount = viewCount + 1 WHERE id = $1", [
+      postId,
+    ]);
 
     const result = await db.query(
       `
@@ -197,13 +196,7 @@ export const createPost = async (req, res) => {
       `INSERT INTO posts (title, content, cover_image, status, author_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-      [
-        title,
-        content,
-        cover_image,
-        status || "draft",
-        req.user.id
-      ]
+      [title, content, cover_image, status || "draft", req.user.id],
     );
 
     const postId = postResult.rows[0].id;
@@ -218,15 +211,14 @@ export const createPost = async (req, res) => {
         .filter((tag) => tag !== "");
 
       for (const tagName of cleanTags) {
-        let tagResult = await db.query(
-          "SELECT id FROM tags WHERE name = $1",
-          [tagName]
-        );
+        let tagResult = await db.query("SELECT id FROM tags WHERE name = $1", [
+          tagName,
+        ]);
 
         if (tagResult.rows.length === 0) {
           tagResult = await db.query(
             "INSERT INTO tags (name) VALUES ($1) RETURNING id",
-            [tagName]
+            [tagName],
           );
         }
 
@@ -234,7 +226,7 @@ export const createPost = async (req, res) => {
           `INSERT INTO post_tags (post_id, tag_id)
            VALUES ($1,$2)
            ON CONFLICT DO NOTHING`,
-          [postId, tagResult.rows[0].id]
+          [postId, tagResult.rows[0].id],
         );
       }
     }
@@ -253,13 +245,13 @@ export const createPost = async (req, res) => {
       for (const catName of cleanCategories) {
         let catResult = await db.query(
           "SELECT id FROM categories WHERE name = $1",
-          [catName]
+          [catName],
         );
 
         if (catResult.rows.length === 0) {
           catResult = await db.query(
             "INSERT INTO categories (name) VALUES ($1) RETURNING id",
-            [catName]
+            [catName],
           );
         }
 
@@ -267,7 +259,7 @@ export const createPost = async (req, res) => {
           `INSERT INTO post_categories (post_id, category_id)
            VALUES ($1,$2)
            ON CONFLICT DO NOTHING`,
-          [postId, catResult.rows[0].id]
+          [postId, catResult.rows[0].id],
         );
       }
     }
@@ -276,14 +268,14 @@ export const createPost = async (req, res) => {
 
     res.status(201).json({
       message: "Post created successfully",
-      postId
+      postId,
     });
   } catch (err) {
     await db.query("ROLLBACK");
     console.error(err);
 
     res.status(500).json({
-      message: "Server error while creating post"
+      message: "Server error while creating post",
     });
   }
 };
@@ -488,15 +480,12 @@ export const replacePost = async (req, res) => {
     return res.status(400).json({ message: "Invalid post ID" });
   }
 
-  const {
-    title,
-    content,
-    cover_image,
-    status,
-    tags = [],
-    categories = [],
-  } = req.body;
+  const { title, content, status } = req.body;
 
+  const cover_image = req.file ? req.file.filename : null;
+
+  let tags = req.body.tags || [];
+  let categories = req.body.categories || [];
   try {
     await db.query("BEGIN");
 

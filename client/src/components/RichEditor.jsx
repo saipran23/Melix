@@ -33,7 +33,9 @@ const RichEditor = ({ value, onChange }) => {
         levels: [1, 2, 3],
       }),
 
-      Image,
+      Image.configure({
+        allowBase64: true,
+      }),
 
       Table.configure({
         resizable: true,
