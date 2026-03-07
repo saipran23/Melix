@@ -518,54 +518,66 @@ export const replacePost = async (req, res) => {
     // Delete old tag relations
     await db.query("DELETE FROM post_tags WHERE post_id = $1", [postId]);
 
-    for (const rawTag of tags) {
-      const tagName = rawTag.trim().toLowerCase();
-      if (!tagName) continue;
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : JSON.parse(tags);
 
-      let tagResult = await db.query("SELECT * FROM tags WHERE name = $1", [
-        tagName,
-      ]);
+      const cleanTags = tagArray
+        .map((tag) => tag.trim().toLowerCase())
+        .filter((tag) => tag !== "");
 
-      if (tagResult.rows.length === 0) {
-        tagResult = await db.query(
-          "INSERT INTO tags (name) VALUES ($1) RETURNING *",
-          [tagName],
+      for (const tagName of cleanTags) {
+        let tagResult = await db.query("SELECT id FROM tags WHERE name = $1", [
+          tagName,
+        ]);
+
+        if (tagResult.rows.length === 0) {
+          tagResult = await db.query(
+            "INSERT INTO tags (name) VALUES ($1) RETURNING id",
+            [tagName],
+          );
+        }
+
+        await db.query(
+          `INSERT INTO post_tags (post_id, tag_id)
+           VALUES ($1,$2)
+           ON CONFLICT DO NOTHING`,
+          [postId, tagResult.rows[0].id],
         );
       }
-
-      await db.query(
-        `INSERT INTO post_tags (post_id, tag_id)
-         VALUES ($1, $2)
-         ON CONFLICT DO NOTHING`,
-        [postId, tagResult.rows[0].id],
-      );
     }
 
     // Delete old category relations
     await db.query("DELETE FROM post_categories WHERE post_id = $1", [postId]);
 
-    for (const rawCategory of categories) {
-      const categoryName = rawCategory.trim().toLowerCase();
-      if (!categoryName) continue;
+    if (categories) {
+      const categoryArray = Array.isArray(categories)
+        ? categories
+        : JSON.parse(categories);
 
-      let categoryResult = await db.query(
-        "SELECT * FROM categories WHERE name = $1",
-        [categoryName],
-      );
+      const cleanCategories = categoryArray
+        .map((cat) => cat.trim().toLowerCase())
+        .filter((cat) => cat !== "");
 
-      if (categoryResult.rows.length === 0) {
-        categoryResult = await db.query(
-          "INSERT INTO categories (name) VALUES ($1) RETURNING *",
-          [categoryName],
+      for (const catName of cleanCategories) {
+        let catResult = await db.query(
+          "SELECT id FROM categories WHERE name = $1",
+          [catName],
+        );
+
+        if (catResult.rows.length === 0) {
+          catResult = await db.query(
+            "INSERT INTO categories (name) VALUES ($1) RETURNING id",
+            [catName],
+          );
+        }
+
+        await db.query(
+          `INSERT INTO post_categories (post_id, category_id)
+           VALUES ($1,$2)
+           ON CONFLICT DO NOTHING`,
+          [postId, catResult.rows[0].id],
         );
       }
-
-      await db.query(
-        `INSERT INTO post_categories (post_id, category_id)
-         VALUES ($1, $2)
-         ON CONFLICT DO NOTHING`,
-        [postId, categoryResult.rows[0].id],
-      );
     }
 
     await db.query("COMMIT");
